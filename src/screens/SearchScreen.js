@@ -1,26 +1,23 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import SearchBar from "../components/SearchBar";
-import Yelp from "../api/Yelp";
+import useResults from "../hooks/useResults";
+import SearchResult from "../components/SearchResult";
+import { ScrollView } from "react-native-gesture-handler";
 
-const SearchScreen = () => {
-    const [searchQuery,setSearchQuery] = useState('')
-    const [result, setResults] = useState([])
-
-    const searchResult = async() => {
-       const response = await Yelp.get('/search', {
-        params: {
-            limit:50,
-            searchQuery,
-            location: 'san jose'
-
-        }
-       })
-       console.log(response.data.businesses)
-       setResults(response.data.businesses)
+const SearchScreen = ({ navigation }) => {
+    const [searchQuery, setSearchQuery] = useState('')
+    const [searchResult, results, errorMessage] = useResults()
+    const filterResults = (price) => {
+        console.log(`PRICE TO BE FILTERED:${price}`)
+        const items = results.filter((data) => {
+            return data.price === price;
+        })
+        console.log(items)
+        return items
     }
     return (
-        <View>
+        <View style={style.parentViewStyle}>
             <SearchBar
                 placeholder={"Search Here...."}
                 onSearchQuery={(text) => {
@@ -31,9 +28,41 @@ const SearchScreen = () => {
                     searchResult()
                 }}
             />
-            <Text>We have found {result.length} results</Text>
+            {errorMessage ? <Text>${errorMessage}</Text> : null}
+            <ScrollView>
+                <SearchResult
+                    results={filterResults('$$$')}
+                    title="Expensive Restaurants"
+                    navigation={navigation}
+                />
+
+                <SearchResult
+                    title="Moderate Restaurant"
+                    results={filterResults('$$')}
+                    navigation={navigation}
+                />
+
+                <SearchResult
+                    title="Cheap Restaurants"
+                    results={filterResults('$')}
+                    navigation={navigation}
+                />
+            </ScrollView>
+
         </View>
     )
 }
 
+const style = StyleSheet.create({
+    parentViewStyle: {
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'flex-start'
+    },
+    titleStyle: {
+        fontWeight: 'bold',
+        fontSize: 18
+    }
+})
 export default SearchScreen;
